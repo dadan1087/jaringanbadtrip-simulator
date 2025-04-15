@@ -106,12 +106,7 @@ st.markdown(f"**Bonus Member 0:** Rp{bonus_green if 0 in green_members else bonu
 st.subheader("\U0001F4B0 Simulasi Cashflow dan Bonus Alokasi")
 data_bonus = {
     "Kategori": ["Dari Belanja", "Bonus Green", "Bonus Silver", "Bonus Red"],
-    "Jumlah (Rp)": [
-        len(all_members) * alokasi_belanja,
-        bonus_green_total,
-        bonus_silver_total,
-        bonus_red_total
-    ]
+    "Jumlah (Rp)": [len(all_members) * alokasi_belanja, bonus_green_total, bonus_silver_total, bonus_red_total]
 }
 df_bonus = pd.DataFrame(data_bonus)
 st.dataframe(df_bonus, use_container_width=True)
@@ -135,7 +130,7 @@ def draw_binary(start, max_depth):
     queue = [(start, 0)]
     while queue:
         node, level = queue.pop(0)
-        if level > max_depth or node > max_index:
+        if level > max_depth:
             continue
         label = f"#{node}"
         if node in red_members:
@@ -154,7 +149,7 @@ def draw_binary(start, max_depth):
             queue.append((right, level + 1))
     return dot
 
-st.graphviz_chart(draw_binary(0, min(level_simulasi, 6)))  # Untuk performa, batasi visualisasi maksimal 6 level
+st.graphviz_chart(draw_binary(0, level_simulasi if level_simulasi <= 6 else 4))
 
 # --- Subtree ---
 st.subheader("\U0001F50D Lihat Subjaringan dari Member Tertentu")
