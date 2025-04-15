@@ -85,6 +85,9 @@ def count_type_descendants(member, max_index, target_members):
     desc = count_descendants(member, max_index)
     return len([d for d in desc if d in target_members])
 
+def format_rupiah(amount):
+    return f"Rp{amount:,.0f}".replace(",", ".")
+
 # --- Simulate Tree ---
 tree_dict = build_binary_tree(level_simulasi)
 all_members = [m for level in tree_dict.values() for m in level]
@@ -100,14 +103,56 @@ bonus_red_total = len(red_members) * bonus_red
 st.subheader("\U0001F4CA Ringkasan Simulasi")
 st.markdown(f"**Total Member:** {len(all_members)}")
 st.markdown(f"**Status Member 0:** {get_status(0, green_members, silver_members, red_members)}")
-st.markdown(f"**Bonus Member 0:** Rp{bonus_green if 0 in green_members else bonus_silver if 0 in silver_members else bonus_red if 0 in red_members else 0:,.0f}")
+st.markdown(f"**Bonus Member 0:** {format_rupiah(bonus_green) if 0 in green_members else format_rupiah(bonus_silver) if 0 in silver_members else format_rupiah(bonus_red) if 0 in red_members else 'Rp0'}")
 
-# --- Tabel Alokasi Bonus ---
+# --- Tabel Alokasi Bonus + Cashflow Lengkap ---
 st.subheader("\U0001F4B0 Simulasi Cashflow dan Bonus Alokasi")
+
+jumlah_member = len(all_members)
+total_belanja = jumlah_member * belanja
+cash_in = jumlah_member * alokasi_belanja
+cash_out = bonus_green_total + bonus_silver_total + bonus_red_total
+nett_cash = cash_in - cash_out
+
 data_bonus = {
-    "Kategori": ["Dari Belanja", "Bonus Green", "Bonus Silver", "Bonus Red"],
-    "Jumlah (Rp)": [len(all_members) * alokasi_belanja, bonus_green_total, bonus_silver_total, bonus_red_total]
+    "Deskripsi": [
+        "Jumlah Member",
+        "Belanja per Member",
+        "Total Belanja (Rp)",
+        "Alokasi untuk Bonus per Member",
+        "Total Cash In (Rp)",
+        "Jumlah Member Green",
+        "Jumlah Member Silver",
+        "Jumlah Member Red",
+        "Bonus per Green (Rp)",
+        "Bonus per Silver (Rp)",
+        "Bonus per Red (Rp)",
+        "Total Bonus Green (Rp)",
+        "Total Bonus Silver (Rp)",
+        "Total Bonus Red (Rp)",
+        "Total Cash Out (Bonus) (Rp)",
+        "Nett (Cash In - Out) (Rp)"
+    ],
+    "Nilai": [
+        f"{jumlah_member:,}",
+        format_rupiah(belanja),
+        format_rupiah(total_belanja),
+        format_rupiah(alokasi_belanja),
+        format_rupiah(cash_in),
+        f"{len(green_members):,}",
+        f"{len(silver_members):,}",
+        f"{len(red_members):,}",
+        format_rupiah(bonus_green),
+        format_rupiah(bonus_silver),
+        format_rupiah(bonus_red),
+        format_rupiah(bonus_green_total),
+        format_rupiah(bonus_silver_total),
+        format_rupiah(bonus_red_total),
+        format_rupiah(cash_out),
+        format_rupiah(nett_cash)
+    ]
 }
+
 df_bonus = pd.DataFrame(data_bonus)
 st.dataframe(df_bonus, use_container_width=True)
 
@@ -155,7 +200,7 @@ st.graphviz_chart(draw_binary(0, level_simulasi if level_simulasi <= 6 else 4))
 st.subheader("\U0001F50D Lihat Subjaringan dari Member Tertentu")
 selected_node = st.number_input("Masukkan nomor member:", min_value=0, max_value=max_index, step=1)
 st.markdown(f"**Status:** {get_status(selected_node, green_members, silver_members, red_members)}")
-st.markdown(f"**Bonus:** Rp{bonus_green if selected_node in green_members else bonus_silver if selected_node in silver_members else bonus_red if selected_node in red_members else 0:,.0f}")
+st.markdown(f"**Bonus:** {format_rupiah(bonus_green) if selected_node in green_members else format_rupiah(bonus_silver) if selected_node in silver_members else format_rupiah(bonus_red) if selected_node in red_members else 'Rp0'}")
 st.markdown(f"**Green Downlines:** {count_type_descendants(selected_node, max_index, green_members)}")
 st.markdown(f"**Silver Downlines:** {count_type_descendants(selected_node, max_index, silver_members)}")
 st.graphviz_chart(draw_binary(selected_node, 3))
