@@ -50,6 +50,11 @@ fig, ax = plt.subplots()
 levels = list(network.keys())
 members = list(network.values())
 ax.plot(levels, members, marker='o', linestyle='-', color='green')
+
+# Tambahkan label angka di tiap titik
+for i, (x, y) in enumerate(zip(levels, members)):
+    ax.text(x, y + 0.5, str(y), ha='center', fontsize=9, color='black')
+
 ax.set_xlabel("Level")
 ax.set_ylabel("Jumlah Member")
 ax.set_title("Pertumbuhan Jaringan Binary")
@@ -66,7 +71,7 @@ st.subheader("\U0001F333 Struktur Jaringan Binary")
 
 def draw_binary_tree(levels):
     dot = graphviz.Digraph()
-    dot.node("0", "🟢")
+    dot.node("0", "🟢 #0")
 
     node_id = 1
     def add_nodes(parent, current_level):
@@ -74,12 +79,12 @@ def draw_binary_tree(levels):
         if current_level > levels:
             return
         left = str(node_id)
-        dot.node(left, "🟢")
+        dot.node(left, f"🟢 #{left}")
         dot.edge(parent, left)
         node_id += 1
 
         right = str(node_id)
-        dot.node(right, "🟢")
+        dot.node(right, f"🟢 #{right}")
         dot.edge(parent, right)
         node_id += 1
 
