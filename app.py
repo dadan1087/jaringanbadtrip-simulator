@@ -62,3 +62,37 @@ st.dataframe(df, use_container_width=True)
 
 st.markdown("---")
 st.caption("Simulasi ini berdasarkan pertumbuhan binary sempurna. Untuk hasil aktual bisa berbeda tergantung perilaku member dan kondisi jaringan.")
+
+import streamlit as st
+import graphviz
+
+def draw_binary_tree(levels):
+    dot = graphviz.Digraph()
+    dot.node("0", "🟢")
+
+    node_id = 1
+    def add_nodes(parent, current_level):
+        nonlocal node_id
+        if current_level > levels:
+            return
+        left = str(node_id)
+        dot.node(left, "🟢")
+        dot.edge(parent, left)
+        node_id += 1
+
+        right = str(node_id)
+        dot.node(right, "🟢")
+        dot.edge(parent, right)
+        node_id += 1
+
+        add_nodes(left, current_level + 1)
+        add_nodes(right, current_level + 1)
+
+    add_nodes("0", 1)
+    return dot
+
+# Tampilkan visualisasi binary tree
+st.subheader("🌳 Struktur Jaringan Binary")
+tree = draw_binary_tree(minggu)
+st.graphviz_chart(tree)
+
