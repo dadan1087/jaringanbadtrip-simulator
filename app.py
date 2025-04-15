@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
 import matplotlib.pyplot as plt
 import graphviz
@@ -13,7 +13,7 @@ belanja = st.sidebar.number_input("Belanja (Rp)", min_value=0, step=100000, valu
 level_simulasi = st.sidebar.slider("Simulasi Pertumbuhan (Level)", 1, 22, 6)
 
 # --- Bonus Settings ---
-st.sidebar.header("\U0001F4B8 Setting Alokasi Bonus")
+st.sidebar.header("💸 Setting Alokasi Bonus")
 alokasi_belanja = st.sidebar.number_input("Alokasi dari Belanja (Rp)", min_value=0, step=100000, value=1000000)
 bonus_green = st.sidebar.number_input("Bonus GREEN", min_value=0, step=100000, value=5000000)
 bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000, value=10000000)
@@ -47,16 +47,37 @@ def count_descendants(member, max_index):
             stack.append(right)
     return descendants
 
+def count_type_descendants(member, max_index, target_members):
+    desc = count_descendants(member, max_index)
+    return len([d for d in desc if d in target_members])
+
 @st.cache_data(show_spinner=False)
 def calculate_statuses(all_members, max_index):
     green_members = []
     silver_members = []
     red_members = []
 
+    # Green: 7 kiri dan 7 kanan
     for member in all_members:
-        desc = count_descendants(member, max_index)
-        if len(desc) == 14:
-            green_members.append(member)
+        left, right = get_children(member)
+        def collect_subtree(root):
+            result = []
+            queue = [root]
+            while queue:
+                current = queue.pop(0)
+                result.append(current)
+                c_left, c_right = get_children(current)
+                if c_left <= max_index:
+                    queue.append(c_left)
+                if c_right <= max_index:
+                    queue.append(c_right)
+            return result
+
+        if left <= max_index and right <= max_index:
+            left_desc = collect_subtree(left)
+            right_desc = collect_subtree(right)
+            if len(left_desc) >= 7 and len(right_desc) >= 7:
+                green_members.append(member)
 
     for member in all_members:
         desc = count_descendants(member, max_index)
@@ -81,10 +102,6 @@ def get_status(member, green_members, silver_members, red_members):
         return "Green"
     return "-"
 
-def count_type_descendants(member, max_index, target_members):
-    desc = count_descendants(member, max_index)
-    return len([d for d in desc if d in target_members])
-
 def format_rupiah(amount):
     return f"Rp{amount:,.0f}".replace(",", ".")
 
@@ -100,13 +117,11 @@ bonus_silver_total = len(silver_members) * bonus_silver
 bonus_red_total = len(red_members) * bonus_red
 
 # --- Output Section ---
-st.subheader("\U0001F4CA Ringkasan Simulasi")
+st.subheader("📊 Ringkasan Simulasi")
 st.markdown(f"**Total Member:** {len(all_members)}")
-#st.markdown(f"**Status Member 0:** {get_status(0, green_members, silver_members, red_members)}")
-#st.markdown(f"**Bonus Member 0:** {format_rupiah(bonus_green) if 0 in green_members else format_rupiah(bonus_silver) if 0 in silver_members else format_rupiah(bonus_red) if 0 in red_members else 'Rp0'}")
 
 # --- Tabel Alokasi Bonus + Cashflow Lengkap ---
-st.subheader("\U0001F4B0 Simulasi Cashflow dan Bonus Alokasi")
+st.subheader("💰 Simulasi Cashflow dan Bonus Alokasi")
 
 jumlah_member = len(all_members)
 total_belanja = jumlah_member * belanja
@@ -114,7 +129,6 @@ cash_in = jumlah_member * alokasi_belanja
 cash_out = bonus_green_total + bonus_silver_total + bonus_red_total
 nett_cash = cash_in - cash_out
 
-# --- Alert jika Cashflow Rugi ---
 if nett_cash < 0:
     st.error("⚠️ Pengaturan bonus menyebabkan kerugian! Cash Out melebihi Cash In. Harap sesuaikan Alokasi atau Bonus agar tidak rugi.")
 
@@ -151,7 +165,7 @@ df_bonus = pd.DataFrame(data_bonus)
 st.dataframe(df_bonus, use_container_width=True)
 
 # --- Grafik Pertumbuhan ---
-st.subheader("\U0001F4C8 Grafik Pertumbuhan Jaringan")
+st.subheader("📈 Grafik Pertumbuhan Jaringan")
 fig, ax = plt.subplots()
 level_keys = list(tree_dict.keys())
 members_per_level = [len(tree_dict[k]) for k in level_keys]
@@ -163,7 +177,7 @@ ax.grid(True)
 st.pyplot(fig)
 
 # --- Struktur Binary ---
-st.subheader("\U0001F333 Struktur Jaringan Binary")
+st.subheader("🌳 Struktur Jaringan Binary")
 def draw_binary(start, max_depth):
     dot = graphviz.Digraph()
     queue = [(start, 0)]
@@ -191,7 +205,7 @@ def draw_binary(start, max_depth):
 st.graphviz_chart(draw_binary(0, level_simulasi if level_simulasi <= 6 else 4))
 
 # --- Subtree ---
-st.subheader("\U0001F50D Lihat Subjaringan dari Member Tertentu")
+st.subheader("🔍 Lihat Subjaringan dari Member Tertentu")
 selected_node = st.number_input("Masukkan nomor member:", min_value=0, max_value=max_index, step=1)
 st.markdown(f"**Status:** {get_status(selected_node, green_members, silver_members, red_members)}")
 st.markdown(f"**Bonus:** {format_rupiah(bonus_green) if selected_node in green_members else format_rupiah(bonus_silver) if selected_node in silver_members else format_rupiah(bonus_red) if selected_node in red_members else 'Rp0'}")
