@@ -96,46 +96,32 @@ bonus_green_total = len(green_members) * bonus_green
 bonus_silver_total = len(silver_members) * bonus_silver
 bonus_red_total = len(red_members) * bonus_red
 
+cash_in = len(all_members) * alokasi_belanja
+cash_out = bonus_green_total + bonus_silver_total + bonus_red_total
+
 # --- Output Section ---
 st.subheader("\U0001F4CA Ringkasan Simulasi")
 st.markdown(f"**Total Member:** {len(all_members)}")
 st.markdown(f"**Status Member 0:** {get_status(0, green_members, silver_members, red_members)}")
 st.markdown(f"**Bonus Member 0:** Rp{bonus_green if 0 in green_members else bonus_silver if 0 in silver_members else bonus_red if 0 in red_members else 0:,.0f}")
 
+# --- Alert and Recommendations ---
+if cash_out > cash_in:
+    st.error("\U0001F6D1 Cash Out lebih besar dari Cash In! Konfigurasi alokasi bonus bisa menyebabkan kerugian.")
+    if len(green_members) > 0:
+        max_safe_green_bonus = cash_in // len(green_members)
+        st.warning(f"\U0001F4B8 Bonus Green maksimum agar tidak rugi: Rp{max_safe_green_bonus:,.0f}")
+    min_required_allocation = cash_out // len(all_members)
+    st.warning(f"\U0001F4B8 Alokasi minimum yang diperlukan agar tidak rugi: Rp{min_required_allocation:,.0f}")
+
 # --- Tabel Alokasi Bonus ---
 st.subheader("\U0001F4B0 Simulasi Cashflow dan Bonus Alokasi")
-total_cashin = len(all_members) * alokasi_belanja
-total_cashout = bonus_green_total + bonus_silver_total + bonus_red_total
-
 data_bonus = {
-    "Kategori": ["Dari Belanja", "Bonus Green", "Bonus Silver", "Bonus Red", "TOTAL CASH OUT"],
-    "Jumlah (Rp)": [total_cashin, bonus_green_total, bonus_silver_total, bonus_red_total, total_cashout]
+    "Kategori": ["Dari Belanja", "Bonus Green", "Bonus Silver", "Bonus Red", "Total Bonus", "Sisa Cash"],
+    "Jumlah (Rp)": [cash_in, bonus_green_total, bonus_silver_total, bonus_red_total, cash_out, cash_in - cash_out]
 }
 df_bonus = pd.DataFrame(data_bonus)
 st.dataframe(df_bonus, use_container_width=True)
-
-# --- Alert jika Cashflow Negatif ---
-if total_cashout > total_cashin:
-    st.error(f"⚠️ Alokasi menyebabkan kerugian! Cash In Rp{total_cashin:,.0f} < Cash Out Rp{total_cashout:,.0f}")
-else:
-    st.success(f"✅ Alokasi aman. Cash In Rp{total_cashin:,.0f} ≥ Cash Out Rp{total_cashout:,.0f}")
-
-# --- Simulasi Titik Impas ---
-st.markdown("### 💡 Simulasi Titik Impas")
-
-# 1. Bonus Green Maksimum agar tidak rugi
-if len(green_members) > 0:
-    bonus_green_max = (total_cashin - bonus_silver_total - bonus_red_total) / len(green_members)
-    st.markdown(f"**Bonus Green maksimum agar tidak rugi:** Rp{bonus_green_max:,.0f}")
-else:
-    st.markdown("**Bonus Green maksimum tidak dapat dihitung (tidak ada member Green).**")
-
-# 2. Alokasi minimum agar tidak rugi
-if len(all_members) > 0:
-    min_alokasi = total_cashout / len(all_members)
-    st.markdown(f"**Alokasi minimum yang diperlukan per member:** Rp{min_alokasi:,.0f}")
-else:
-    st.markdown("**Tidak ada member untuk menghitung alokasi minimum.**")
 
 # --- Grafik Pertumbuhan ---
 st.subheader("\U0001F4C8 Grafik Pertumbuhan Jaringan")
@@ -160,11 +146,11 @@ def draw_binary(start, max_depth):
             continue
         label = f"#{node}"
         if node in red_members:
-            label = f"🔴 {label}"
+            label = f"\U0001F534 {label}"
         elif node in silver_members:
             label = f"⚪ {label}"
         elif node in green_members:
-            label = f"🟢 {label}"
+            label = f"\U0001F7E2 {label}"
         dot.node(str(node), label)
         left, right = get_children(node)
         if left <= max_index:
