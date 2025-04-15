@@ -13,7 +13,7 @@ belanja = st.sidebar.number_input("Belanja (Rp)", min_value=0, step=100000, valu
 minggu = st.sidebar.slider("Simulasi Pertumbuhan (minggu)", 1, 5, 3)
 
 # --- Bonus Settings ---
-st.sidebar.header("\U0001F4B8 Setting Alokasi Bonus")
+st.sidebar.header("💸 Setting Alokasi Bonus")
 alokasi_belanja = st.sidebar.number_input("Alokasi dari Belanja (Rp)", min_value=0, step=100000, value=1000000)
 bonus_green = st.sidebar.number_input("Bonus GREEN", min_value=0, step=100000, value=5000000)
 bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000, value=15000000)
@@ -45,14 +45,14 @@ silver_downline = 14 if minggu >= 4 else 0
 status, bonus = get_status_and_bonus(total_downline, silver_downline)
 
 # --- Output Section ---
-st.subheader("\U0001F4CA Ringkasan Simulasi")
+st.subheader("📊 Ringkasan Simulasi")
 st.markdown(f"**Total Member:** {total_members}")
 st.markdown(f"**Downline:** {total_downline}")
 st.markdown(f"**Status:** {status}")
 st.markdown(f"**Bonus:** Rp{bonus:,.0f}")
 
 # --- Alokasi Bonus Table ---
-st.subheader("\U0001F4B0 Alokasi Bonus")
+st.subheader("💰 Alokasi Bonus")
 data_bonus = {
     "Kategori": ["Dari Belanja", "GREEN", "SILVER", "RED"],
     "Jumlah (Rp)": [alokasi_belanja, bonus_green, bonus_silver, bonus_red]
@@ -61,7 +61,7 @@ df_bonus = pd.DataFrame(data_bonus)
 st.dataframe(df_bonus, use_container_width=True)
 
 # --- Grafik Pertumbuhan ---
-st.subheader("\U0001F4C8 Grafik Pertumbuhan Jaringan")
+st.subheader("📈 Grafik Pertumbuhan Jaringan")
 fig, ax = plt.subplots()
 levels = list(network.keys())
 members = list(network.values())
@@ -78,12 +78,12 @@ ax.grid(True)
 st.pyplot(fig)
 
 # --- Tabel Detail ---
-st.subheader("\U0001F4C3 Tabel Jumlah Member per Level")
+st.subheader("📃 Tabel Jumlah Member per Level")
 df = pd.DataFrame({"Level": levels, "Member Baru": members})
 st.dataframe(df, use_container_width=True)
 
 # --- Visualisasi Struktur Binary Tree ---
-st.subheader("\U0001F333 Struktur Jaringan Binary")
+st.subheader("🌳 Struktur Jaringan Binary")
 
 def draw_binary_tree(levels, start=0, node_limit=None):
     dot = graphviz.Digraph()
@@ -115,7 +115,7 @@ def draw_binary_tree(levels, start=0, node_limit=None):
 st.graphviz_chart(draw_binary_tree(minggu, start=0, node_limit=total_members - 1))
 
 # --- Interaktif Pilih Node untuk Lihat Subtree ---
-st.subheader("\U0001F50D Lihat Subjaringan dari Member Tertentu")
+st.subheader("🔍 Lihat Subjaringan dari Member Tertentu")
 selected_node = st.number_input("Masukkan nomor member:", min_value=0, max_value=total_members - 1, step=1)
 
 max_sub_levels = minggu  # sesuai simulasi awal
