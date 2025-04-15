@@ -25,15 +25,11 @@ def get_status_and_bonus(total_downline, green_downline, silver_downline):
     if silver_downline >= 14:  # Jika sudah ada 14 Silver di bawahnya
         return "Red", bonus_red
     # Cek jika ada 14 Green di bawahnya, maka statusnya bisa jadi Silver
-    elif green_downline >= 14 and silver_downline == 0:  # Masih Green, belum ada Silver
-        return "Silver", bonus_silver
     elif green_downline >= 14:  # Dapat Bonus Silver jika sudah punya 14 Green
         return "Silver", bonus_silver
     # Jika total downline sudah mencapai 14 dan green_downline < 14, status Green
-    elif total_downline == 14 and green_downline < 14:
+    elif total_downline >= 14:
         return "Green", bonus_green
-    elif total_downline < 14:
-        return "-", 0
     return "-", 0
 
 # --- Simulate Binary Tree Growth ---
@@ -49,6 +45,7 @@ total_members = sum(network.values())
 total_downline = total_members - 1
 
 # --- Dummy simulation of Green and Silver downlines ---
+# For simplicity, we simulate green downlines to be up to 14
 green_downline = min(14, total_downline)  # For simplicity, we simulate green downlines to be up to 14
 silver_downline = min(14, green_downline)  # For simplicity, we simulate silver downlines to be up to 14
 
@@ -99,4 +96,38 @@ def draw_binary_tree(levels, start=0, node_limit=None):
     dot = graphviz.Digraph()
 
     def get_label(n):
-        return f"🟢 #{n
+        return f"🟢 #{n}"
+
+    def add_nodes(parent, current, current_level):
+        if current_level > levels:
+            return
+        left = 2 * current + 1
+        right = 2 * current + 2
+        if node_limit is not None and (left > node_limit or right > node_limit):
+            return
+
+        dot.node(str(current), get_label(current))
+        dot.node(str(left), get_label(left))
+        dot.edge(str(current), str(left))
+        dot.node(str(right), get_label(right))
+        dot.edge(str(current), str(right))
+
+        add_nodes(current, left, current_level + 1)
+        add_nodes(current, right, current_level + 1)
+
+    dot.node(str(start), get_label(start))
+    add_nodes(None, start, 1)
+    return dot
+
+st.graphviz_chart(draw_binary_tree(minggu, start=0, node_limit=total_members - 1))
+
+# --- Interaktif Pilih Node untuk Lihat Subtree ---
+st.subheader("\U0001F50D Lihat Subjaringan dari Member Tertentu")
+selected_node = st.number_input("Masukkan nomor member:", min_value=0, max_value=total_members - 1, step=1)
+
+max_sub_levels = minggu  # sesuai simulasi awal
+sub_tree = draw_binary_tree(max_sub_levels, start=selected_node, node_limit=total_members - 1)
+st.graphviz_chart(sub_tree)
+
+st.markdown("---")
+st.caption("Simulasi ini berdasarkan pertumbuhan binary sempurna. Untuk hasil aktual bisa berbeda tergantung perilaku member dan kondisi jaringan.")
