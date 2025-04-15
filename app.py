@@ -67,61 +67,44 @@ df = pd.DataFrame({"Level": levels, "Member Baru": members})
 st.dataframe(df, use_container_width=True)
 
 # --- Visualisasi Struktur Binary Tree ---
-st.subheader("\U0001F333 Struktur Jaringan Binary (Global)")
+st.subheader("\U0001F333 Struktur Jaringan Binary")
 
-def draw_binary_tree(levels):
+def draw_binary_tree(levels, start=0, node_limit=None):
     dot = graphviz.Digraph()
-    dot.node("0", "🟢 #0")
 
-    node_id = 1
-    def add_nodes(parent, current_level):
-        nonlocal node_id
+    def get_label(n):
+        return f"🟢 #{n}"
+
+    def add_nodes(parent, current, current_level):
         if current_level > levels:
             return
-        left = str(node_id)
-        dot.node(left, f"🟢 #{left}")
-        dot.edge(parent, left)
-        node_id += 1
+        left = 2 * current + 1
+        right = 2 * current + 2
+        if node_limit is not None and (left > node_limit or right > node_limit):
+            return
 
-        right = str(node_id)
-        dot.node(right, f"🟢 #{right}")
-        dot.edge(parent, right)
-        node_id += 1
+        dot.node(str(current), get_label(current))
+        dot.node(str(left), get_label(left))
+        dot.edge(str(current), str(left))
+        dot.node(str(right), get_label(right))
+        dot.edge(str(current), str(right))
 
-        add_nodes(left, current_level + 1)
-        add_nodes(right, current_level + 1)
+        add_nodes(current, left, current_level + 1)
+        add_nodes(current, right, current_level + 1)
 
-    add_nodes("0", 1)
+    dot.node(str(start), get_label(start))
+    add_nodes(None, start, 1)
     return dot
 
-st.graphviz_chart(draw_binary_tree(minggu))
+st.graphviz_chart(draw_binary_tree(minggu, start=0, node_limit=total_members - 1))
 
-# --- Interaktif: Simulasi dari Member Tertentu ---
-st.subheader("\U0001F50D Simulasi Sub-Jaringan dari Member Tertentu")
-selected_node = st.number_input("Pilih Nomor Member (ID)", min_value=0, max_value=total_members - 1, step=1, value=0)
+# --- Interaktif Pilih Node untuk Lihat Subtree ---
+st.subheader("\U0001F50D Lihat Subjaringan dari Member Tertentu")
+selected_node = st.number_input("Masukkan nomor member:", min_value=0, max_value=total_members - 1, step=1)
 
-with st.expander("Lihat Jaringan dari Member Ini"):
-    def draw_subtree(root_id, levels):
-        dot = graphviz.Digraph()
-        dot.node(str(root_id), f"🟢 #{root_id}")
-
-        def add_children(parent, level, current_level):
-            if current_level > level:
-                return
-            left = 2 * int(parent) + 1
-            right = 2 * int(parent) + 2
-            dot.node(str(left), f"🟢 #{left}")
-            dot.edge(str(parent), str(left))
-            dot.node(str(right), f"🟢 #{right}")
-            dot.edge(str(parent), str(right))
-
-            add_children(left, level, current_level + 1)
-            add_children(right, level, current_level + 1)
-
-        add_children(root_id, minggu, 1)
-        return dot
-
-    st.graphviz_chart(draw_subtree(selected_node, minggu))
+max_sub_levels = minggu  # sesuai simulasi awal
+sub_tree = draw_binary_tree(max_sub_levels, start=selected_node, node_limit=total_members - 1)
+st.graphviz_chart(sub_tree)
 
 st.markdown("---")
 st.caption("Simulasi ini berdasarkan pertumbuhan binary sempurna. Untuk hasil aktual bisa berbeda tergantung perilaku member dan kondisi jaringan.")
