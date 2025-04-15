@@ -121,9 +121,7 @@ if nett_cash < 0:
 data_bonus = {
     "Deskripsi": [
         "Jumlah Member",
-        "Belanja per Member",
         "Total Belanja (Rp)",
-        "Alokasi untuk Bonus per Member",
         "Total Cash In (Rp)",
         "Jumlah Member Green",
         "Jumlah Member Silver",
@@ -136,9 +134,7 @@ data_bonus = {
     ],
     "Nilai": [
         f"{jumlah_member:,}",
-        format_rupiah(belanja),
         format_rupiah(total_belanja),
-        format_rupiah(alokasi_belanja),
         format_rupiah(cash_in),
         f"{len(green_members):,}",
         f"{len(silver_members):,}",
