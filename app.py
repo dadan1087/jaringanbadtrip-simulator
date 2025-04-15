@@ -1,15 +1,14 @@
 import streamlit as st
 import pandas as pd
 import graphviz
-import math
 
-st.set_page_config(page_title="MLM Binary Simulator", layout="wide")
+st.set_page_config(page_title="MLM Binary Network Simulator", layout="wide")
 st.title("MLM Binary Network Simulator")
 
 # --- Input Section ---
 st.sidebar.header("Input Member Details")
 belanja = st.sidebar.number_input("Belanja (Rp)", min_value=0, step=100000, value=2000000)
-minggu = st.sidebar.slider("Simulasi Pertumbuhan (Level)", 1, 22, 3)
+minggu = st.sidebar.slider("Simulasi Pertumbuhan (Level)", 1, 22, 6)
 
 # --- Bonus Settings ---
 st.sidebar.header("🎯 Setting Alokasi Bonus")
@@ -53,6 +52,15 @@ def build_binary_tree(levels):
         next_id += 1
     return members
 
+# --- Subtree size calculator ---
+def count_subtree_members(members, member_id):
+    count = 1
+    member = members[member_id]
+    for child_id in [member.left, member.right]:
+        if child_id is not None:
+            count += count_subtree_members(members, child_id)
+    return count
+
 # --- Status Evaluation ---
 def evaluate_statuses(members):
     def count_green_silver_downlines(member_id):
@@ -71,32 +79,25 @@ def evaluate_statuses(members):
                 silver += c_silver
         return green, silver
 
-    # Traverse bottom-up to determine status
+    # Step 1: Assign Green
     for member_id in sorted(members.keys(), reverse=True):
         member = members[member_id]
-        # Check Green: Perfect matrix (7 kiri 7 kanan) = 3 level full binary = 15 total
         subtree_size = count_subtree_members(members, member_id)
         if subtree_size == 15:
             member.status = "Green"
             member.bonus = bonus_green
-        # After green is decided, calculate green/silver under them
+
+    # Step 2: Assign Silver and Red based on counted downlines
     for member in members.values():
         member.green_downlines, member.silver_downlines = count_green_silver_downlines(member.id)
+
+    for member in members.values():
         if member.status == "Green" and member.green_downlines >= 14:
             member.status = "Silver"
             member.bonus = bonus_silver
         if member.status == "Silver" and member.silver_downlines >= 14:
             member.status = "Red"
             member.bonus = bonus_red
-
-# --- Subtree size calculator (to check matrix 3 level = 15 member) ---
-def count_subtree_members(members, member_id):
-    count = 1
-    member = members[member_id]
-    for child_id in [member.left, member.right]:
-        if child_id is not None:
-            count += count_subtree_members(members, child_id)
-    return count
 
 # --- Visual Binary Tree ---
 def draw_binary_tree(members, max_level):
