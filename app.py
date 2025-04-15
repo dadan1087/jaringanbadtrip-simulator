@@ -3,102 +3,117 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import graphviz
 
-st.set_page_config(page_title="Simulasi MLM Binary", layout="wide")
-st.title("Simulasi Binary MLM - Cashflow dan Bonus")
+st.set_page_config(page_title="MLM Binary Simulator", layout="wide")
+st.title("MLM Binary Network Simulator")
 
-# --- Sidebar Setting ---
-st.sidebar.header("⚖️ Setting Simulasi")
-belanja_per_member = st.sidebar.number_input("Belanja per Member (Rp)", value=2000000, step=100000)
-alokasi_bonus_per_member = st.sidebar.number_input("Alokasi Bonus per Member (Rp)", value=1000000, step=100000)
-bonus_green = st.sidebar.number_input("Bonus GREEN (Rp)", value=5000000, step=500000)
-bonus_silver = st.sidebar.number_input("Bonus SILVER (Rp)", value=10000000, step=1000000)
-bonus_red = st.sidebar.number_input("Bonus RED (Rp)", value=50000000, step=5000000)
-jumlah_minggu = st.sidebar.slider("Simulasi Pertumbuhan (minggu)", 1, 5, 3)
+# --- Input Section ---
+st.sidebar.header("Input Member Details")
+belanja = st.sidebar.number_input("Belanja (Rp)", min_value=0, step=100000, value=2000000)
+minggu = st.sidebar.slider("Simulasi Pertumbuhan (minggu)", 1, 5, 3)
 
-# --- Fungsi Hitung Pertumbuhan Jaringan ---
-def hitung_jaringan(minggu):
-    jaringan = {}
-    total_member = 0
-    for i in range(minggu + 1):
-        jumlah = 2**i
-        jaringan[i] = jumlah
-        total_member += jumlah
-    return jaringan, total_member
+# --- Bonus Settings ---
+st.sidebar.header("\U0001F4B8 Setting Alokasi Bonus")
+alokasi_belanja = st.sidebar.number_input("Alokasi dari Belanja (Rp)", min_value=0, step=100000, value=1000000)
+bonus_green = st.sidebar.number_input("Bonus GREEN", min_value=0, step=100000, value=5000000)
+bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000, value=10000000)
+bonus_red = st.sidebar.number_input("Bonus RED", min_value=0, step=100000, value=50000000)
 
-jaringan, total_member = hitung_jaringan(jumlah_minggu)
-total_downline = total_member - 1
+# --- Simulate Binary Tree Growth ---
+def simulate_binary_growth(levels):
+    network = {0: 1}
+    for i in range(1, levels + 1):
+        network[i] = network[i - 1] * 2
+    return network
 
-# --- Fungsi Hitung Bonus ---
-def hitung_bonus(jumlah_member):
-    bonus_green_total = 0
-    bonus_silver_total = 0
-    bonus_red_total = 0
+network = simulate_binary_growth(minggu)
+total_members = sum(network.values())
+total_downline = total_members - 1
 
-    # Anggap member pertama (#0) eligible GREEN jika downline 14
-    if jumlah_member >= 15:
-        bonus_green_total = bonus_green
+# --- Hitung Status ---
+status = "-"
+total_bonus_green = 0
+total_bonus_silver = 0
+total_bonus_red = 0
 
-    # SILVER dan RED dihitung berdasarkan kondisi bahwa perlu 14 GREEN dan 14 SILVER berturut-turut
-    total_green = 1 if jumlah_member >= 15 else 0
-    total_silver = 0
-    total_red = 0
+if total_downline == 14:
+    status = "Green"
+    total_bonus_green = bonus_green
+elif total_downline > 14 and minggu >= 4:
+    status = "Silver"
+    total_bonus_green = 14 * bonus_green
+    total_bonus_silver = bonus_silver
+elif total_downline > 14 and minggu >= 5:
+    status = "Red"
+    total_bonus_green = 14 * bonus_green
+    total_bonus_silver = 14 * bonus_silver
+    total_bonus_red = bonus_red
 
-    if total_green >= 14:
-        bonus_silver_total = bonus_silver
-        total_silver = 1
+# --- Output Section ---
+st.subheader("\U0001F4CA Ringkasan Simulasi")
+st.markdown(f"**Total Member:** {total_members}")
+st.markdown(f"**Downline:** {total_downline}")
+st.markdown(f"**Status:** {status}")
+st.markdown(f"**Bonus Green:** Rp{total_bonus_green:,.0f}")
+st.markdown(f"**Bonus Silver:** Rp{total_bonus_silver:,.0f}")
+st.markdown(f"**Bonus Red:** Rp{total_bonus_red:,.0f}")
 
-    if total_silver >= 14:
-        bonus_red_total = bonus_red
-
-    return bonus_green_total, bonus_silver_total, bonus_red_total, total_green, total_silver
-
-bonus_green_total, bonus_silver_total, bonus_red_total, total_green, total_silver = hitung_bonus(total_member)
-
-# --- Cashflow & Alokasi Bonus ---
-total_cashin = total_member * alokasi_bonus_per_member
-total_bonus = bonus_green_total + bonus_silver_total + bonus_red_total
-saldo = total_cashin - total_bonus
-
-# --- Tabel Cashflow ---
-st.subheader(":moneybag: Simulasi Cashflow dan Alokasi Bonus")
-data_cashflow = {
-    "Kategori": [
-        "Total Member",
-        "Total Cash-in dari Alokasi Belanja",
-        "Total Bonus GREEN",
-        "Total Bonus SILVER",
-        "Total Bonus RED",
-        "Saldo Akhir"
-    ],
-    "Jumlah (Rp)": [
-        total_member,
-        total_cashin,
-        bonus_green_total,
-        bonus_silver_total,
-        bonus_red_total,
-        saldo
-    ]
+# --- Tabel Alokasi Bonus ---
+st.subheader("\U0001F4B0 Tabel Simulasi Cashflow dan Bonus Alokasi")
+data_bonus = {
+    "Kategori": ["Alokasi dari Belanja", "Total Bonus GREEN", "Total Bonus SILVER", "Total Bonus RED"],
+    "Jumlah (Rp)": [alokasi_belanja * total_members, total_bonus_green, total_bonus_silver, total_bonus_red]
 }
-df_cashflow = pd.DataFrame(data_cashflow)
-st.dataframe(df_cashflow, use_container_width=True)
+df_bonus = pd.DataFrame(data_bonus)
+st.dataframe(df_bonus, use_container_width=True)
 
 # --- Grafik Pertumbuhan ---
-st.subheader(":chart_with_upwards_trend: Grafik Pertumbuhan Jaringan")
+st.subheader("\U0001F4C8 Grafik Pertumbuhan Jaringan")
+import matplotlib.pyplot as plt
 fig, ax = plt.subplots()
-level = list(jaringan.keys())
-jumlah = list(jaringan.values())
-ax.plot(level, jumlah, marker='o', linestyle='-', color='green')
-for i, (x, y) in enumerate(zip(level, jumlah)):
-    ax.text(x, y + 0.3, str(y), ha='center', fontsize=9)
+levels = list(network.keys())
+members = list(network.values())
+ax.plot(levels, members, marker='o', linestyle='-', color='green')
+for i, (x, y) in enumerate(zip(levels, members)):
+    ax.text(x, y + 0.5, str(y), ha='center', fontsize=9, color='black')
 ax.set_xlabel("Level")
 ax.set_ylabel("Jumlah Member")
 ax.set_title("Pertumbuhan Jaringan Binary")
 ax.grid(True)
 st.pyplot(fig)
 
-# --- Tabel Jumlah Member per Level ---
-st.subheader(":bar_chart: Jumlah Member per Level")
-df_jaringan = pd.DataFrame({"Level": level, "Jumlah Member": jumlah})
-st.dataframe(df_jaringan, use_container_width=True)
+# --- Tabel Detail ---
+st.subheader("\U0001F4C3 Tabel Jumlah Member per Level")
+df = pd.DataFrame({"Level": levels, "Member Baru": members})
+st.dataframe(df, use_container_width=True)
 
-st.caption("Simulasi berdasarkan pertumbuhan jaringan binary sempurna. Untuk hasil aktual, struktur jaringan bisa berbeda.")
+# --- Visualisasi Struktur Binary Tree ---
+st.subheader("\U0001F333 Struktur Jaringan Binary")
+def draw_binary_tree(levels, start=0, node_limit=None):
+    dot = graphviz.Digraph()
+    def get_label(n): return f"🟢 #{n}"
+    def add_nodes(parent, current, current_level):
+        if current_level > levels: return
+        left = 2 * current + 1
+        right = 2 * current + 2
+        if node_limit is not None and (left > node_limit or right > node_limit): return
+        dot.node(str(current), get_label(current))
+        dot.node(str(left), get_label(left))
+        dot.edge(str(current), str(left))
+        dot.node(str(right), get_label(right))
+        dot.edge(str(current), str(right))
+        add_nodes(current, left, current_level + 1)
+        add_nodes(current, right, current_level + 1)
+    dot.node(str(start), get_label(start))
+    add_nodes(None, start, 1)
+    return dot
+
+st.graphviz_chart(draw_binary_tree(minggu, start=0, node_limit=total_members - 1))
+
+# --- Interaktif Pilih Node untuk Lihat Subtree ---
+st.subheader("\U0001F50D Lihat Subjaringan dari Member Tertentu")
+selected_node = st.number_input("Masukkan nomor member:", min_value=0, max_value=total_members - 1, step=1)
+sub_tree = draw_binary_tree(minggu, start=selected_node, node_limit=total_members - 1)
+st.graphviz_chart(sub_tree)
+
+st.markdown("---")
+st.caption("Simulasi ini berdasarkan pertumbuhan binary sempurna. Untuk hasil aktual bisa berbeda tergantung perilaku member dan kondisi jaringan.")
