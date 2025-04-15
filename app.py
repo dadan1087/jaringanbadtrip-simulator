@@ -58,7 +58,7 @@ def is_green(member):
     subtree = count_descendants(member, tree_dict, max_index)
     return len(subtree) == 14
 
-def get_status(member, green_members, silver_members):
+def get_status(member, green_members, silver_members, red_members):
     if member in red_members:
         return "Red"
     elif member in silver_members:
@@ -72,6 +72,7 @@ tree_dict = build_binary_tree(level_simulasi)
 all_members = [m for level in tree_dict.values() for m in level]
 max_index = max(all_members)
 
+# Identify Green, Silver, and Red Members
 green_members = [m for m in all_members if is_green(m)]
 silver_members = [m for m in all_members if count_green_descendants(m, green_members) >= 14]
 red_members = [m for m in all_members if count_silver_descendants(m, silver_members) >= 14]
@@ -84,7 +85,7 @@ bonus_red_total = len(red_members) * bonus_red
 # --- Output Section ---
 st.subheader("\U0001F4CA Ringkasan Simulasi")
 st.markdown(f"**Total Member:** {len(all_members)}")
-st.markdown(f"**Status Member 0:** {get_status(0, green_members, silver_members)}")
+st.markdown(f"**Status Member 0:** {get_status(0, green_members, silver_members, red_members)}")
 st.markdown(f"**Bonus Member 0:** Rp{bonus_green if 0 in green_members else 0:,.0f}")
 
 # --- Tabel Alokasi Bonus ---
@@ -139,7 +140,7 @@ st.graphviz_chart(draw_binary(0, level_simulasi))
 # --- Subtree ---
 st.subheader("\U0001F50D Lihat Subjaringan dari Member Tertentu")
 selected_node = st.number_input("Masukkan nomor member:", min_value=0, max_value=max_index, step=1)
-st.markdown(f"**Status:** {get_status(selected_node, green_members, silver_members)}")
+st.markdown(f"**Status:** {get_status(selected_node, green_members, silver_members, red_members)}")
 st.markdown(f"**Bonus:** Rp{bonus_green if selected_node in green_members else bonus_silver if selected_node in silver_members else bonus_red if selected_node in red_members else 0:,.0f}")
 st.markdown(f"**Green Downlines:** {count_green_descendants(selected_node, green_members)}")
 st.markdown(f"**Silver Downlines:** {count_silver_descendants(selected_node, silver_members)}")
