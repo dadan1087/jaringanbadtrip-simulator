@@ -55,8 +55,9 @@ def is_green(member):
     left, right = get_children(member)
     if right > max_index:
         return False
+    # Member menjadi Green jika memiliki 7 anggota kiri dan 7 anggota kanan
     subtree = count_descendants(member, tree_dict, max_index)
-    return len(subtree) == 14
+    return len(subtree) == 14  # Matriks sempurna 7 kiri, 7 kanan
 
 def get_status(member, green_members, silver_members, red_members):
     if member in red_members:
@@ -72,7 +73,7 @@ tree_dict = build_binary_tree(level_simulasi)
 all_members = [m for level in tree_dict.values() for m in level]
 max_index = max(all_members)
 
-# Identify Green, Silver, and Red Members
+# Identifikasi Green, Silver, dan Red Members
 green_members = [m for m in all_members if is_green(m)]
 silver_members = [m for m in all_members if count_green_descendants(m, green_members) >= 14]
 red_members = [m for m in all_members if count_silver_descendants(m, silver_members) >= 14]
