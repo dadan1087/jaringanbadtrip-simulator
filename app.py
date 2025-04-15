@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import graphviz
-import math
 
 st.set_page_config(page_title="MLM Binary Simulator", layout="wide")
 st.title("MLM Binary Network Simulator")
@@ -10,59 +9,89 @@ st.title("MLM Binary Network Simulator")
 # --- Input Section ---
 st.sidebar.header("Input Member Details")
 belanja = st.sidebar.number_input("Belanja (Rp)", min_value=0, step=100000, value=2000000)
-minggu = st.sidebar.slider("Simulasi Pertumbuhan (minggu)", 1, 5, 3)
+level_simulasi = st.sidebar.slider("Simulasi Pertumbuhan (Level)", 1, 22, 6)
 
 # --- Bonus Settings ---
 st.sidebar.header("\U0001F4B8 Setting Alokasi Bonus")
 alokasi_belanja = st.sidebar.number_input("Alokasi dari Belanja (Rp)", min_value=0, step=100000, value=1000000)
 bonus_green = st.sidebar.number_input("Bonus GREEN", min_value=0, step=100000, value=5000000)
-bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000, value=15000000)
+bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000, value=10000000)
 bonus_red = st.sidebar.number_input("Bonus RED", min_value=0, step=100000, value=50000000)
 
-# --- Define Bonus & Status Rules ---
-def get_status_and_bonus(total_downline, green_downline, silver_downline):
-    # Cek jika ada 14 Silver di bawahnya, maka statusnya bisa jadi Red
-    if silver_downline >= 14:  # Jika sudah ada 14 Silver di bawahnya
-        return "Red", bonus_red
-    # Cek jika ada 14 Green di bawahnya, maka statusnya bisa jadi Silver
-    elif green_downline >= 14:  # Dapat Bonus Silver jika sudah punya 14 Green
-        return "Silver", bonus_silver
-    # Jika total downline sudah mencapai 14 dan green_downline < 14, status Green
-    elif total_downline >= 14:
-        return "Green", bonus_green
-    return "-", 0
+# --- Helper Functions ---
+def build_binary_tree(levels):
+    tree = {}
+    index = 0
+    for level in range(levels + 1):
+        nodes = 2 ** level
+        tree[level] = list(range(index, index + nodes))
+        index += nodes
+    return tree
 
-# --- Simulate Binary Tree Growth ---
-def simulate_binary_growth(levels):
-    network = {0: 1}  # root level has 1 person
-    for i in range(1, levels + 1):
-        network[i] = network[i - 1] * 2
-    return network
+def get_children(index):
+    return 2 * index + 1, 2 * index + 2
 
-# --- Simulate the network based on the number of weeks (levels) ---
-network = simulate_binary_growth(minggu)
-total_members = sum(network.values())
-total_downline = total_members - 1
+def count_descendants(member, tree_dict, max_index):
+    descendants = set()
+    stack = [member]
+    while stack:
+        node = stack.pop()
+        left, right = get_children(node)
+        if left <= max_index:
+            descendants.add(left)
+            stack.append(left)
+        if right <= max_index:
+            descendants.add(right)
+            stack.append(right)
+    return descendants
 
-# --- Dummy simulation of Green and Silver downlines ---
-# For simplicity, we simulate green downlines to be up to 14
-green_downline = min(14, total_downline)  # For simplicity, we simulate green downlines to be up to 14
-silver_downline = min(14, green_downline)  # For simplicity, we simulate silver downlines to be up to 14
+def count_green_descendants(member, green_members):
+    return len([d for d in green_members if d != member and d in count_descendants(member, tree_dict, max_index)])
 
-status, bonus = get_status_and_bonus(total_downline, green_downline, silver_downline)
+def count_silver_descendants(member, silver_members):
+    return len([d for d in silver_members if d != member and d in count_descendants(member, tree_dict, max_index)])
+
+def is_green(member):
+    left, right = get_children(member)
+    if right > max_index:
+        return False
+    subtree = count_descendants(member, tree_dict, max_index)
+    return len(subtree) == 14
+
+def get_status(member, green_members, silver_members):
+    if member in red_members:
+        return "Red"
+    elif member in silver_members:
+        return "Silver"
+    elif member in green_members:
+        return "Green"
+    return "-"
+
+# --- Simulate Tree ---
+tree_dict = build_binary_tree(level_simulasi)
+all_members = [m for level in tree_dict.values() for m in level]
+max_index = max(all_members)
+
+green_members = [m for m in all_members if is_green(m)]
+silver_members = [m for m in all_members if count_green_descendants(m, green_members) >= 14]
+red_members = [m for m in all_members if count_silver_descendants(m, silver_members) >= 14]
+
+# Hitung bonus hanya untuk yang pertama kali memenuhi syarat
+bonus_green_total = len(green_members) * bonus_green
+bonus_silver_total = len(silver_members) * bonus_silver
+bonus_red_total = len(red_members) * bonus_red
 
 # --- Output Section ---
 st.subheader("\U0001F4CA Ringkasan Simulasi")
-st.markdown(f"**Total Member:** {total_members}")
-st.markdown(f"**Downline:** {total_downline}")
-st.markdown(f"**Status:** {status}")
-st.markdown(f"**Bonus:** Rp{bonus:,.0f}")
+st.markdown(f"**Total Member:** {len(all_members)}")
+st.markdown(f"**Status Member 0:** {get_status(0, green_members, silver_members)}")
+st.markdown(f"**Bonus Member 0:** Rp{bonus_green if 0 in green_members else 0:,.0f}")
 
-# --- Alokasi Bonus Table ---
-st.subheader("\U0001F4B0 Alokasi Bonus")
+# --- Tabel Alokasi Bonus ---
+st.subheader("\U0001F4B0 Simulasi Cashflow dan Bonus Alokasi")
 data_bonus = {
-    "Kategori": ["Dari Belanja", "GREEN", "SILVER", "RED"],
-    "Jumlah (Rp)": [alokasi_belanja, bonus_green, bonus_silver, bonus_red]
+    "Kategori": ["Dari Belanja", "Bonus Green", "Bonus Silver", "Bonus Red"],
+    "Jumlah (Rp)": [len(all_members) * alokasi_belanja, bonus_green_total, bonus_silver_total, bonus_red_total]
 }
 df_bonus = pd.DataFrame(data_bonus)
 st.dataframe(df_bonus, use_container_width=True)
@@ -70,64 +99,48 @@ st.dataframe(df_bonus, use_container_width=True)
 # --- Grafik Pertumbuhan ---
 st.subheader("\U0001F4C8 Grafik Pertumbuhan Jaringan")
 fig, ax = plt.subplots()
-levels = list(network.keys())
-members = list(network.values())
-ax.plot(levels, members, marker='o', linestyle='-', color='green')
-
-# Tambahkan label angka di tiap titik
-for i, (x, y) in enumerate(zip(levels, members)):
-    ax.text(x, y + 0.5, str(y), ha='center', fontsize=9, color='black')
-
+level_keys = list(tree_dict.keys())
+members_per_level = [len(tree_dict[k]) for k in level_keys]
+ax.plot(level_keys, members_per_level, marker='o')
 ax.set_xlabel("Level")
 ax.set_ylabel("Jumlah Member")
 ax.set_title("Pertumbuhan Jaringan Binary")
 ax.grid(True)
 st.pyplot(fig)
 
-# --- Tabel Detail ---
-st.subheader("\U0001F4C3 Tabel Jumlah Member per Level")
-df = pd.DataFrame({"Level": levels, "Member Baru": members})
-st.dataframe(df, use_container_width=True)
-
-# --- Visualisasi Struktur Binary Tree ---
+# --- Struktur Binary ---
 st.subheader("\U0001F333 Struktur Jaringan Binary")
-
-def draw_binary_tree(levels, start=0, node_limit=None):
+def draw_binary(start, max_depth):
     dot = graphviz.Digraph()
-
-    def get_label(n):
-        return f"🟢 #{n}"
-
-    def add_nodes(parent, current, current_level):
-        if current_level > levels:
-            return
-        left = 2 * current + 1
-        right = 2 * current + 2
-        if node_limit is not None and (left > node_limit or right > node_limit):
-            return
-
-        dot.node(str(current), get_label(current))
-        dot.node(str(left), get_label(left))
-        dot.edge(str(current), str(left))
-        dot.node(str(right), get_label(right))
-        dot.edge(str(current), str(right))
-
-        add_nodes(current, left, current_level + 1)
-        add_nodes(current, right, current_level + 1)
-
-    dot.node(str(start), get_label(start))
-    add_nodes(None, start, 1)
+    queue = [(start, 0)]
+    while queue:
+        node, level = queue.pop(0)
+        if level > max_depth:
+            continue
+        label = f"#{node}"
+        if node in red_members:
+            label = f"🔴 {label}"
+        elif node in silver_members:
+            label = f"⚪ {label}"
+        elif node in green_members:
+            label = f"🟢 {label}"
+        dot.node(str(node), label)
+        left, right = get_children(node)
+        if left <= max_index:
+            dot.edge(str(node), str(left))
+            queue.append((left, level + 1))
+        if right <= max_index:
+            dot.edge(str(node), str(right))
+            queue.append((right, level + 1))
     return dot
 
-st.graphviz_chart(draw_binary_tree(minggu, start=0, node_limit=total_members - 1))
+st.graphviz_chart(draw_binary(0, level_simulasi))
 
-# --- Interaktif Pilih Node untuk Lihat Subtree ---
+# --- Subtree ---
 st.subheader("\U0001F50D Lihat Subjaringan dari Member Tertentu")
-selected_node = st.number_input("Masukkan nomor member:", min_value=0, max_value=total_members - 1, step=1)
-
-max_sub_levels = minggu  # sesuai simulasi awal
-sub_tree = draw_binary_tree(max_sub_levels, start=selected_node, node_limit=total_members - 1)
-st.graphviz_chart(sub_tree)
-
-st.markdown("---")
-st.caption("Simulasi ini berdasarkan pertumbuhan binary sempurna. Untuk hasil aktual bisa berbeda tergantung perilaku member dan kondisi jaringan.")
+selected_node = st.number_input("Masukkan nomor member:", min_value=0, max_value=max_index, step=1)
+st.markdown(f"**Status:** {get_status(selected_node, green_members, silver_members)}")
+st.markdown(f"**Bonus:** Rp{bonus_green if selected_node in green_members else bonus_silver if selected_node in silver_members else bonus_red if selected_node in red_members else 0:,.0f}")
+st.markdown(f"**Green Downlines:** {count_green_descendants(selected_node, green_members)}")
+st.markdown(f"**Silver Downlines:** {count_silver_descendants(selected_node, silver_members)}")
+st.graphviz_chart(draw_binary(selected_node, 3))
