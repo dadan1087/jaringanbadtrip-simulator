@@ -99,20 +99,31 @@ bonus_green_total = len(green_members) * bonus_green
 bonus_silver_total = len(silver_members) * bonus_silver
 bonus_red_total = len(red_members) * bonus_red
 
-# --- Output Section ---
-st.subheader("\U0001F4CA Ringkasan Simulasi")
-st.markdown(f"**Total Member:** {len(all_members)}")
-st.markdown(f"**Status Member 0:** {get_status(0, green_members, silver_members, red_members)}")
-st.markdown(f"**Bonus Member 0:** {format_rupiah(bonus_green) if 0 in green_members else format_rupiah(bonus_silver) if 0 in silver_members else format_rupiah(bonus_red) if 0 in red_members else 'Rp0'}")
-
-# --- Tabel Alokasi Bonus + Cashflow Lengkap ---
-st.subheader("\U0001F4B0 Simulasi Cashflow dan Bonus Alokasi")
-
 jumlah_member = len(all_members)
 total_belanja = jumlah_member * belanja
 cash_in = jumlah_member * alokasi_belanja
 cash_out = bonus_green_total + bonus_silver_total + bonus_red_total
 nett_cash = cash_in - cash_out
+
+# --- Alert Warning ---
+if nett_cash < 0:
+    st.error(f"\U000026A0\ufe0f Cash In lebih kecil dari Cash Out! Simulasi menyebabkan kerugian sebesar {format_rupiah(-nett_cash)}")
+
+# --- Smart Suggestion ---
+max_bonus_green_safe = cash_in // len(green_members) if green_members else 0
+min_allocation_required = cash_out // jumlah_member if jumlah_member else 0
+
+st.warning(f"\U0001F4A1 Bonus Green maksimum agar tidak rugi: {format_rupiah(max_bonus_green_safe)}")
+st.warning(f"\U0001F4A1 Alokasi minimum yang diperlukan agar tidak rugi: {format_rupiah(min_allocation_required)}")
+
+# --- Output Section ---
+st.subheader("\U0001F4CA Ringkasan Simulasi")
+st.markdown(f"**Total Member:** {jumlah_member}")
+st.markdown(f"**Status Member 0:** {get_status(0, green_members, silver_members, red_members)}")
+st.markdown(f"**Bonus Member 0:** {format_rupiah(bonus_green) if 0 in green_members else format_rupiah(bonus_silver) if 0 in silver_members else format_rupiah(bonus_red) if 0 in red_members else 'Rp0'}")
+
+# --- Tabel Alokasi Bonus + Cashflow Lengkap ---
+st.subheader("\U0001F4B0 Simulasi Cashflow dan Bonus Alokasi")
 
 data_bonus = {
     "Deskripsi": [
