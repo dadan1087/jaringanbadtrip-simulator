@@ -102,8 +102,8 @@ bonus_red_total = len(red_members) * bonus_red
 # --- Output Section ---
 st.subheader("\U0001F4CA Ringkasan Simulasi")
 st.markdown(f"**Total Member:** {len(all_members)}")
-st.markdown(f"**Status Member 0:** {get_status(0, green_members, silver_members, red_members)}")
-st.markdown(f"**Bonus Member 0:** {format_rupiah(bonus_green) if 0 in green_members else format_rupiah(bonus_silver) if 0 in silver_members else format_rupiah(bonus_red) if 0 in red_members else 'Rp0'}")
+#st.markdown(f"**Status Member 0:** {get_status(0, green_members, silver_members, red_members)}")
+#st.markdown(f"**Bonus Member 0:** {format_rupiah(bonus_green) if 0 in green_members else format_rupiah(bonus_silver) if 0 in silver_members else format_rupiah(bonus_red) if 0 in red_members else 'Rp0'}")
 
 # --- Tabel Alokasi Bonus + Cashflow Lengkap ---
 st.subheader("\U0001F4B0 Simulasi Cashflow dan Bonus Alokasi")
