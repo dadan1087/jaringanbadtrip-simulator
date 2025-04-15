@@ -20,13 +20,14 @@ bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000,
 bonus_red = st.sidebar.number_input("Bonus RED", min_value=0, step=100000, value=50000000)
 
 # --- Define Bonus & Status Rules ---
-def get_status_and_bonus(total_downline, silver_downline):
-    if total_downline == 14 and silver_downline < 14:
-        return "Green", bonus_green
-    elif total_downline == 14 and silver_downline == 14:
-        return "Red", bonus_red
-    elif total_downline >= 14:
-        return "Silver", bonus_silver
+def get_status_and_bonus(total_downline):
+    if total_downline >= 14:
+        if total_downline == 14:
+            return "Green", bonus_green
+        elif total_downline == 28:
+            return "Silver", bonus_silver
+        elif total_downline >= 42:
+            return "Red", bonus_red
     return "-", 0
 
 # --- Simulate Binary Tree Growth ---
@@ -42,7 +43,7 @@ total_downline = total_members - 1
 
 # --- Dummy silver simulation ---
 silver_downline = 14 if minggu >= 4 else 0
-status, bonus = get_status_and_bonus(total_downline, silver_downline)
+status, bonus = get_status_and_bonus(total_downline)
 
 # --- Output Section ---
 st.subheader("\U0001F4CA Ringkasan Simulasi")
