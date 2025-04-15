@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import graphviz
-import math
 
 st.set_page_config(page_title="MLM Binary Simulator", layout="wide")
 st.title("MLM Binary Network Simulator")
@@ -10,7 +9,7 @@ st.title("MLM Binary Network Simulator")
 # --- Input Section ---
 st.sidebar.header("Input Member Details")
 belanja = st.sidebar.number_input("Belanja (Rp)", min_value=0, step=100000, value=2000000)
-minggu = st.sidebar.slider("Simulasi Pertumbuhan (minggu)", 1, 5, 3)
+minggu = st.sidebar.slider("Simulasi Pertumbuhan (minggu)", 1, 6, 4)
 
 # --- Bonus Settings ---
 st.sidebar.header("\U0001F4B8 Setting Alokasi Bonus")
@@ -19,124 +18,145 @@ bonus_green = st.sidebar.number_input("Bonus GREEN", min_value=0, step=100000, v
 bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000, value=10000000)
 bonus_red = st.sidebar.number_input("Bonus RED", min_value=0, step=100000, value=50000000)
 
-# --- Simulasi Pertumbuhan Binary Tree ---
-def generate_members(levels):
-    members = []
-    for level in range(levels + 1):
-        for i in range(2 ** level):
-            member_id = len(members)
-            parent_id = (member_id - 1) // 2 if member_id != 0 else None
-            members.append({
-                "id": member_id,
-                "parent": parent_id,
-                "level": level,
-                "status": "Green",
-                "bonus": 0,
-                "green_downline": 0,
-                "silver_downline": 0
-            })
-    return members
+# --- Simulate Binary Tree ---
+def build_binary_tree(levels):
+    tree = {}
+    def add_node(index, level):
+        if level > levels:
+            return
+        left = 2 * index + 1
+        right = 2 * index + 2
+        tree[index] = {
+            "left": left,
+            "right": right,
+            "level": level,
+            "status": "Green",
+            "green_bonus_received": False,
+            "silver_bonus_received": False,
+            "red_bonus_received": False,
+        }
+        add_node(left, level + 1)
+        add_node(right, level + 1)
+    add_node(0, 1)
+    return tree
 
-members = generate_members(minggu)
+def get_downlines(tree, index, level_limit=3):
+    result = []
+    def collect(idx, level):
+        if idx not in tree or level > level_limit:
+            return
+        result.append(idx)
+        collect(tree[idx]['left'], level + 1)
+        collect(tree[idx]['right'], level + 1)
+    collect(tree[index]['left'], 1)
+    collect(tree[index]['right'], 1)
+    return result
 
-# --- Hitung Bonus Green ---
-def assign_green_bonus(members):
-    bonus_total = 0
-    awarded_ids = set()
-    for m in members[::-1]:
-        if m["id"] == 0:
-            continue
-        parent = members[m["parent"]]
-        if parent["id"] in awarded_ids:
-            continue
-        siblings = [x for x in members if x["parent"] == parent["id"]]
-        if len(siblings) >= 2:
-            children = [x for x in members if x["parent"] in [s["id"] for s in siblings]]
-            if len(children) >= 4:
-                grand = [x for x in members if x["parent"] in [c["id"] for c in children]]
-                if len(grand) >= 8:
-                    parent["bonus"] += bonus_green
-                    parent["status"] = "Green"
-                    awarded_ids.add(parent["id"])
-                    bonus_total += bonus_green
-    return bonus_total
+def count_green_and_silver(tree, idx):
+    greens = 0
+    silvers = 0
+    for i in get_all_downlines(tree, idx):
+        if tree[i]['status'] == 'Green':
+            greens += 1
+        elif tree[i]['status'] == 'Silver':
+            silvers += 1
+    return greens, silvers
 
-bonus_green_total = assign_green_bonus(members)
+def get_all_downlines(tree, index):
+    result = []
+    def collect(idx):
+        if idx not in tree:
+            return
+        result.append(idx)
+        collect(tree[idx]['left'])
+        collect(tree[idx]['right'])
+    collect(tree[index]['left'])
+    collect(tree[index]['right'])
+    return result
 
-# --- Hitung Bonus Silver ---
-def assign_silver_bonus(members):
-    bonus_total = 0
-    for m in members:
-        downlines = [x for x in members if x["parent"] == m["id"] and x["status"] == "Green"]
-        if len(downlines) >= 14:
-            m["status"] = "Silver"
-            m["bonus"] += bonus_silver
-            bonus_total += bonus_silver
-    return bonus_total
+# --- Run Simulation ---
+tree = build_binary_tree(minggu)
+total_green_bonus = 0
+total_silver_bonus = 0
+total_red_bonus = 0
+status_counter = {"Green": 0, "Silver": 0, "Red": 0}
 
-bonus_silver_total = assign_silver_bonus(members)
+def has_perfect_matrix(tree, idx):
+    downlines = get_downlines(tree, idx, level_limit=3)
+    return len(downlines) == 14  # 7 kiri + 7 kanan
 
-# --- Hitung Bonus Red ---
-def assign_red_bonus(members):
-    bonus_total = 0
-    for m in members:
-        downlines = [x for x in members if x["parent"] == m["id"] and x["status"] == "Silver"]
-        if len(downlines) >= 14:
-            m["status"] = "Red"
-            m["bonus"] += bonus_red
-            bonus_total += bonus_red
-    return bonus_total
+for idx in tree:
+    if has_perfect_matrix(tree, idx) and not tree[idx]['green_bonus_received']:
+        tree[idx]['green_bonus_received'] = True
+        total_green_bonus += bonus_green
 
-bonus_red_total = assign_red_bonus(members)
+for idx in tree:
+    greens, silvers = count_green_and_silver(tree, idx)
+    if greens >= 14 and not tree[idx]['silver_bonus_received']:
+        tree[idx]['status'] = 'Silver'
+        tree[idx]['silver_bonus_received'] = True
+        total_silver_bonus += bonus_silver
 
-# --- Ringkasan ---
-jumlah_member = len(members)
+for idx in tree:
+    greens, silvers = count_green_and_silver(tree, idx)
+    if silvers >= 14 and not tree[idx]['red_bonus_received']:
+        tree[idx]['status'] = 'Red'
+        tree[idx]['red_bonus_received'] = True
+        total_red_bonus += bonus_red
 
+for node in tree.values():
+    status_counter[node['status']] += 1
+
+# --- Output ---
 st.subheader("\U0001F4CA Ringkasan Simulasi")
-st.markdown(f"**Total Member:** {jumlah_member}")
-st.markdown(f"**Total Bonus GREEN:** Rp{bonus_green_total:,.0f}")
-st.markdown(f"**Total Bonus SILVER:** Rp{bonus_silver_total:,.0f}")
-st.markdown(f"**Total Bonus RED:** Rp{bonus_red_total:,.0f}")
+st.markdown(f"**Total Member:** {len(tree)}")
+st.markdown(f"**Downline:** {len(tree)-1}")
+st.markdown(f"**Total Bonus GREEN:** Rp{total_green_bonus:,.0f}")
+st.markdown(f"**Total Bonus SILVER:** Rp{total_silver_bonus:,.0f}")
+st.markdown(f"**Total Bonus RED:** Rp{total_red_bonus:,.0f}")
 
-# --- Tabel Bonus Alokasi ---
-st.subheader("\U0001F4B0 Alokasi Bonus")
-data_bonus = {
-    "Kategori": ["Alokasi dari Belanja", "GREEN", "SILVER", "RED"],
-    "Jumlah (Rp)": [alokasi_belanja, bonus_green, bonus_silver, bonus_red]
-}
-df_bonus = pd.DataFrame(data_bonus)
-st.dataframe(df_bonus, use_container_width=True)
+# --- Tabel Status ---
+st.subheader("\U0001F465 Status Member")
+st.markdown(f"🟢 Green: {status_counter['Green']} | 🥈 Silver: {status_counter['Silver']} | 🔴 Red: {status_counter['Red']}")
 
-# --- Grafik Pertumbuhan ---
-st.subheader("\U0001F4C8 Grafik Pertumbuhan Jaringan")
-level_count = {}
-for m in members:
-    level = m["level"]
-    level_count[level] = level_count.get(level, 0) + 1
-
-fig, ax = plt.subplots()
-ax.plot(list(level_count.keys()), list(level_count.values()), marker='o', linestyle='-', color='green')
-for x, y in level_count.items():
-    ax.text(x, y + 0.5, str(y), ha='center', fontsize=9, color='black')
-
-ax.set_xlabel("Level")
-ax.set_ylabel("Jumlah Member")
-ax.set_title("Pertumbuhan Jaringan Binary")
-ax.grid(True)
-st.pyplot(fig)
-
-# --- Struktur Binary Visual ---
+# --- Struktur Visualisasi ---
 st.subheader("\U0001F333 Struktur Jaringan Binary")
-def draw_binary_tree(members):
+def draw_binary_tree(tree):
     dot = graphviz.Digraph()
-    for m in members:
-        label = f"{m['status']}\n#{m['id']}\nBonus: {m['bonus']//1_000_000}jt"
-        dot.node(str(m['id']), label)
-        if m['parent'] is not None:
-            dot.edge(str(m['parent']), str(m['id']))
+    for idx, node in tree.items():
+        label = f"#{idx}"
+        if node['status'] == 'Green':
+            label = f"🟢 {label}"
+        elif node['status'] == 'Silver':
+            label = f"🥈 {label}"
+        elif node['status'] == 'Red':
+            label = f"🔴 {label}"
+        dot.node(str(idx), label)
+        if node['left'] in tree:
+            dot.edge(str(idx), str(node['left']))
+        if node['right'] in tree:
+            dot.edge(str(idx), str(node['right']))
     return dot
 
-st.graphviz_chart(draw_binary_tree(members))
+st.graphviz_chart(draw_binary_tree(tree))
+
+# --- Dataframe Detail ---
+st.subheader("\U0001F4CB Data Member")
+data = []
+for idx, node in tree.items():
+    greens, silvers = count_green_and_silver(tree, idx)
+    data.append({
+        "ID": idx,
+        "Level": node['level'],
+        "Status": node['status'],
+        "Green Bonus": "✓" if node['green_bonus_received'] else "-",
+        "Silver Bonus": "✓" if node['silver_bonus_received'] else "-",
+        "Red Bonus": "✓" if node['red_bonus_received'] else "-",
+        "Total Green Bawah": greens,
+        "Total Silver Bawah": silvers
+    })
+df = pd.DataFrame(data)
+st.dataframe(df, use_container_width=True)
 
 st.markdown("---")
-st.caption("Simulasi ini berdasarkan struktur binary sempurna. Bonus hanya diberikan ke upline tertinggi per formasi.")
+st.caption("Simulasi ini menggunakan struktur binary sempurna dan aturan bonus sesuai prioritas jaringan.")
