@@ -67,7 +67,7 @@ df = pd.DataFrame({"Level": levels, "Member Baru": members})
 st.dataframe(df, use_container_width=True)
 
 # --- Visualisasi Struktur Binary Tree ---
-st.subheader("\U0001F333 Struktur Jaringan Binary")
+st.subheader("\U0001F333 Struktur Jaringan Binary (Global)")
 
 def draw_binary_tree(levels):
     dot = graphviz.Digraph()
@@ -95,6 +95,33 @@ def draw_binary_tree(levels):
     return dot
 
 st.graphviz_chart(draw_binary_tree(minggu))
+
+# --- Interaktif: Simulasi dari Member Tertentu ---
+st.subheader("\U0001F50D Simulasi Sub-Jaringan dari Member Tertentu")
+selected_node = st.number_input("Pilih Nomor Member (ID)", min_value=0, max_value=total_members - 1, step=1, value=0)
+
+with st.expander("Lihat Jaringan dari Member Ini"):
+    def draw_subtree(root_id, levels):
+        dot = graphviz.Digraph()
+        dot.node(str(root_id), f"🟢 #{root_id}")
+
+        def add_children(parent, level, current_level):
+            if current_level > level:
+                return
+            left = 2 * int(parent) + 1
+            right = 2 * int(parent) + 2
+            dot.node(str(left), f"🟢 #{left}")
+            dot.edge(str(parent), str(left))
+            dot.node(str(right), f"🟢 #{right}")
+            dot.edge(str(parent), str(right))
+
+            add_children(left, level, current_level + 1)
+            add_children(right, level, current_level + 1)
+
+        add_children(root_id, minggu, 1)
+        return dot
+
+    st.graphviz_chart(draw_subtree(selected_node, minggu))
 
 st.markdown("---")
 st.caption("Simulasi ini berdasarkan pertumbuhan binary sempurna. Untuk hasil aktual bisa berbeda tergantung perilaku member dan kondisi jaringan.")
