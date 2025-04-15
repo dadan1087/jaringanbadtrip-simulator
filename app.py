@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import graphviz
 import math
 
 st.set_page_config(page_title="MLM Binary Simulator", layout="wide")
@@ -9,7 +10,7 @@ st.title("MLM Binary Network Simulator")
 # --- Input Section ---
 st.sidebar.header("Input Member Details")
 belanja = st.sidebar.number_input("Belanja (Rp)", min_value=0, step=100000, value=2000000)
-minggu = st.sidebar.slider("Simulasi Pertumbuhan (minggu)", 1, 10, 3)
+minggu = st.sidebar.slider("Simulasi Pertumbuhan (minggu)", 1, 5, 3)
 
 # --- Define Bonus & Status Rules ---
 def get_status_and_bonus(total_downline, silver_downline):
@@ -60,11 +61,8 @@ st.subheader("\U0001F4C3 Tabel Jumlah Member per Level")
 df = pd.DataFrame({"Level": levels, "Member Baru": members})
 st.dataframe(df, use_container_width=True)
 
-st.markdown("---")
-st.caption("Simulasi ini berdasarkan pertumbuhan binary sempurna. Untuk hasil aktual bisa berbeda tergantung perilaku member dan kondisi jaringan.")
-
-import streamlit as st
-import graphviz
+# --- Visualisasi Struktur Binary Tree ---
+st.subheader("\U0001F333 Struktur Jaringan Binary")
 
 def draw_binary_tree(levels):
     dot = graphviz.Digraph()
@@ -91,8 +89,7 @@ def draw_binary_tree(levels):
     add_nodes("0", 1)
     return dot
 
-# Tampilkan visualisasi binary tree
-st.subheader("🌳 Struktur Jaringan Binary")
-tree = draw_binary_tree(minggu)
-st.graphviz_chart(tree)
+st.graphviz_chart(draw_binary_tree(minggu))
 
+st.markdown("---")
+st.caption("Simulasi ini berdasarkan pertumbuhan binary sempurna. Untuk hasil aktual bisa berbeda tergantung perilaku member dan kondisi jaringan.")
