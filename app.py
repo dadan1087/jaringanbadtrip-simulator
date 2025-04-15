@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import graphviz
-import math
 
+# Setting konfigurasi Streamlit
 st.set_page_config(page_title="MLM Binary Simulator", layout="wide")
 st.title("MLM Binary Network Simulator")
 
@@ -82,7 +82,7 @@ st.subheader("\U0001F4C3 Tabel Jumlah Member per Level")
 df = pd.DataFrame({"Level": levels, "Member Baru": members})
 st.dataframe(df, use_container_width=True)
 
-# --- Struktur Jaringan Binary ---
+# --- Visualisasi Struktur Binary Tree ---
 st.subheader("\U0001F333 Struktur Jaringan Binary")
 
 def draw_binary_tree(levels, start=0, node_limit=None):
@@ -122,18 +122,18 @@ max_sub_levels = minggu  # sesuai simulasi awal
 sub_tree = draw_binary_tree(max_sub_levels, start=selected_node, node_limit=total_members - 1)
 st.graphviz_chart(sub_tree)
 
-# --- CASHFLOW TABLE ---
-st.subheader("\U0001F4B5 Simulasi Cashflow")
-cashin_total = total_members * alokasi_belanja
-cashout_total = bonus_green + bonus_silver + bonus_red
-saldo = cashin_total - cashout_total
+# --- Simulasi Bonus dan CashFlow ---
+st.subheader("💰 Simulasi Cashflow dan Bonus Alokasi")
 
+# Table for Cashflow & Bonus Allocation
 cashflow_data = {
-    "Komponen": ["CASHIN dari belanja", "BONUS GREEN", "BONUS SILVER", "BONUS RED", "SALDO AKHIR"],
-    "Jumlah (Rp)": [cashin_total, bonus_green, bonus_silver, bonus_red, saldo]
+    "Level": list(range(1, total_members + 1)),
+    "Bonus": [bonus] * total_members,  # Assuming every member gets the same bonus
+    "CashIn": [alokasi_belanja] * total_members,  # Every member spends 2 million
 }
 
-st.dataframe(pd.DataFrame(cashflow_data), use_container_width=True)
+df_cashflow = pd.DataFrame(cashflow_data)
+st.dataframe(df_cashflow)
 
 st.markdown("---")
 st.caption("Simulasi ini berdasarkan pertumbuhan binary sempurna. Untuk hasil aktual bisa berbeda tergantung perilaku member dan kondisi jaringan.")
