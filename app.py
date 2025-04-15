@@ -12,14 +12,21 @@ st.sidebar.header("Input Member Details")
 belanja = st.sidebar.number_input("Belanja (Rp)", min_value=0, step=100000, value=2000000)
 minggu = st.sidebar.slider("Simulasi Pertumbuhan (minggu)", 1, 5, 3)
 
+# --- Bonus Settings ---
+st.sidebar.header("\U0001F4B8 Setting Alokasi Bonus")
+alokasi_belanja = st.sidebar.number_input("Alokasi dari Belanja (Rp)", min_value=0, step=100000, value=1000000)
+bonus_green = st.sidebar.number_input("Bonus GREEN", min_value=0, step=100000, value=5000000)
+bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000, value=15000000)
+bonus_red = st.sidebar.number_input("Bonus RED", min_value=0, step=100000, value=50000000)
+
 # --- Define Bonus & Status Rules ---
 def get_status_and_bonus(total_downline, silver_downline):
     if total_downline == 14 and silver_downline < 14:
-        return "Green", 5_000_000
+        return "Green", bonus_green
     elif total_downline == 14 and silver_downline == 14:
-        return "Red", 30_000_000
+        return "Red", bonus_red
     elif total_downline >= 14:
-        return "Silver", 10_000_000
+        return "Silver", bonus_silver
     return "-", 0
 
 # --- Simulate Binary Tree Growth ---
@@ -43,6 +50,15 @@ st.markdown(f"**Total Member:** {total_members}")
 st.markdown(f"**Downline:** {total_downline}")
 st.markdown(f"**Status:** {status}")
 st.markdown(f"**Bonus:** Rp{bonus:,.0f}")
+
+# --- Alokasi Bonus Table ---
+st.subheader("\U0001F4B0 Alokasi Bonus")
+data_bonus = {
+    "Kategori": ["Dari Belanja", "GREEN", "SILVER", "RED"],
+    "Jumlah (Rp)": [alokasi_belanja, bonus_green, bonus_silver, bonus_red]
+}
+df_bonus = pd.DataFrame(data_bonus)
+st.dataframe(df_bonus, use_container_width=True)
 
 # --- Grafik Pertumbuhan ---
 st.subheader("\U0001F4C8 Grafik Pertumbuhan Jaringan")
