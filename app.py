@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import graphviz
+from functools import lru_cache
 
 st.set_page_config(page_title="MLM Binary Simulator", layout="wide")
 st.title("MLM Binary Network Simulator")
@@ -31,7 +32,7 @@ def build_binary_tree(levels):
 def get_children(index):
     return 2 * index + 1, 2 * index + 2
 
-@st.cache_data(show_spinner=False)
+@lru_cache(maxsize=None)
 def count_descendants(member, max_index):
     descendants = set()
     stack = [member]
@@ -98,16 +99,6 @@ bonus_green_total = len(green_members) * bonus_green
 bonus_silver_total = len(silver_members) * bonus_silver
 bonus_red_total = len(red_members) * bonus_red
 
-jumlah_member = len(all_members)
-total_belanja = jumlah_member * belanja
-cash_in = jumlah_member * alokasi_belanja
-cash_out = bonus_green_total + bonus_silver_total + bonus_red_total
-nett_cash = cash_in - cash_out
-
-# --- Alert if Cashflow Negative ---
-if nett_cash < 0:
-    st.error("❗ Cashflow negatif! Total bonus melebihi alokasi yang tersedia. Ubah pengaturan untuk menghindari kerugian.")
-
 # --- Output Section ---
 st.subheader("\U0001F4CA Ringkasan Simulasi")
 st.markdown(f"**Total Member:** {len(all_members)}")
@@ -116,6 +107,16 @@ st.markdown(f"**Bonus Member 0:** {format_rupiah(bonus_green) if 0 in green_memb
 
 # --- Tabel Alokasi Bonus + Cashflow Lengkap ---
 st.subheader("\U0001F4B0 Simulasi Cashflow dan Bonus Alokasi")
+
+jumlah_member = len(all_members)
+total_belanja = jumlah_member * belanja
+cash_in = jumlah_member * alokasi_belanja
+cash_out = bonus_green_total + bonus_silver_total + bonus_red_total
+nett_cash = cash_in - cash_out
+
+# --- Alert jika Cashflow Rugi ---
+if nett_cash < 0:
+    st.error("⚠️ Pengaturan bonus menyebabkan kerugian! Cash Out melebihi Cash In. Harap sesuaikan Alokasi atau Bonus agar tidak rugi.")
 
 data_bonus = {
     "Deskripsi": [
@@ -156,7 +157,8 @@ data_bonus = {
     ]
 }
 
-st.dataframe(pd.DataFrame(data_bonus), use_container_width=True)
+df_bonus = pd.DataFrame(data_bonus)
+st.dataframe(df_bonus, use_container_width=True)
 
 # --- Grafik Pertumbuhan ---
 st.subheader("\U0001F4C8 Grafik Pertumbuhan Jaringan")
