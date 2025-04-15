@@ -16,7 +16,7 @@ minggu = st.sidebar.slider("Simulasi Pertumbuhan (minggu)", 1, 5, 3)
 st.sidebar.header("\U0001F4B8 Setting Alokasi Bonus")
 alokasi_belanja = st.sidebar.number_input("Alokasi dari Belanja (Rp)", min_value=0, step=100000, value=1000000)
 bonus_green = st.sidebar.number_input("Bonus GREEN", min_value=0, step=100000, value=5000000)
-bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000, value=15000000)
+bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000, value=10000000)
 bonus_red = st.sidebar.number_input("Bonus RED", min_value=0, step=100000, value=50000000)
 
 # --- Define Bonus & Status Rules ---
@@ -126,7 +126,7 @@ sub_tree = draw_binary_tree(max_sub_levels, start=selected_node, node_limit=tota
 st.graphviz_chart(sub_tree)
 
 # --- Simulasi Bonus dan CashFlow ---
-st.subheader("💰 Simulasi Cashflow dan Bonus Alokasi")
+st.subheader("\U0001F4B0 Simulasi Cashflow dan Bonus Alokasi")
 
 # Table for Cashflow & Bonus Allocation
 cashflow_data = {
