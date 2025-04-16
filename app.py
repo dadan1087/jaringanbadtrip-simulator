@@ -5,7 +5,7 @@ import graphviz
 from functools import lru_cache
 
 st.set_page_config(page_title="MLM Binary Simulator", layout="wide")
-st.title("MLM Binary Network Simulator")
+st.title("Badtrips Binary Network Simulator")
 
 # --- Input Section ---
 st.sidebar.header("Input Member Details")
