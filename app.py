@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st  
 import pandas as pd
 import matplotlib.pyplot as plt
 import graphviz
@@ -20,10 +20,10 @@ bonus_silver = st.sidebar.number_input("Bonus SILVER", min_value=0, step=100000,
 bonus_red = st.sidebar.number_input("Bonus RED", min_value=0, step=100000, value=50000000)
 
 st.sidebar.header("🎯 Syarat Status")
-# Input level matriks sempurna untuk Green, lalu hitung threshold anak per sisi
-green_level = st.sidebar.number_input("Level Matriks Sempurna untuk GREEN", min_value=1, max_value=10, value=3)
-silver_threshold = st.sidebar.number_input("Jumlah Green untuk SILVER", min_value=1, value=14)
-red_threshold = st.sidebar.number_input("Jumlah Silver untuk RED", min_value=1, value=14)
+green_level = st.sidebar.number_input("Level Matriks Sempurna untuk GREEN", min_value=1, max_value=10, value=3, key="green_level")
+silver_threshold = st.sidebar.number_input("Jumlah Green untuk SILVER", min_value=1, value=14, key="silver_threshold")
+red_threshold = st.sidebar.number_input("Jumlah Silver untuk RED", min_value=1, value=14, key="red_threshold")
+
 # Hitung jumlah anak per sisi yang diperlukan
 req_green_children = 2 ** green_level - 1
 
@@ -55,20 +55,23 @@ def count_descendants(member, max_index):
             stack.append(right)
     return desc
 
+def get_status(n, green, silver, red):
+    if n in red: return "RED"
+    elif n in silver: return "SILVER"
+    elif n in green: return "GREEN"
+    return "-"
+
 # --- Status Calculation ---
-@st.cache_data(show_spinner=False)
 def calculate_statuses(all_members, max_index):
     green, silver, red = set(), set(), set()
-    # Green: subtree perfect of given level => each side >= req_green_children
     for m in all_members:
         left, right = get_children(m)
         if left <= max_index and right <= max_index:
-            # BFS limited by depth green_level-1
             def collect(root, depth):
                 nodes, q = [], [(root,0)]
                 while q:
                     cur, d = q.pop(0)
-                    if d > depth: break
+                    if d > depth: continue
                     nodes.append(cur)
                     l, r = get_children(cur)
                     if l <= max_index: q.append((l,d+1))
@@ -78,12 +81,11 @@ def calculate_statuses(all_members, max_index):
             right_count = len(collect(right, green_level-1))
             if left_count >= req_green_children and right_count >= req_green_children:
                 green.add(m)
-    # Silver: count descendant greens
+
     cache_desc = {m: count_descendants(m, max_index) for m in all_members}
     for m in all_members:
         if len([d for d in green if d in cache_desc[m]]) >= silver_threshold:
             silver.add(m)
-    # Red: count descendant silvers
     for m in all_members:
         if len([d for d in silver if d in cache_desc[m]]) >= red_threshold:
             red.add(m)
@@ -115,7 +117,8 @@ st.markdown(f"**Red (≥{red_threshold} Silver):** {len(red):,}")
 # --- Cashflow Table ---
 st.subheader("💰 Simulasi Cashflow & Bonus")
 alert = "✅ Cashflow positif" if Nett >= 0 else "⚠️ Cashflow negatif - kerugian"
-if Nett >= 0: st.success(alert) else: st.error(alert)
+if Nett >= 0: st.success(alert)
+else: st.error(alert)
 
 data = {
     "Deskripsi": ["Total Belanja","Total Cash In","Total Cash Out","Nett (In-Out)"],
