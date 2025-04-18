@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import graphviz
 from functools import lru_cache
 
-# --- Streamlit Config ---
 st.set_page_config(page_title="MLM Binary Simulator", layout="wide")
 st.title("Badtrips Binary Network Simulator")
 
@@ -24,7 +23,6 @@ green_level = st.sidebar.number_input("Level Matriks Sempurna untuk GREEN", min_
 silver_threshold = st.sidebar.number_input("Jumlah Green untuk SILVER", min_value=1, value=14, key="silver_threshold")
 red_threshold = st.sidebar.number_input("Jumlah Silver untuk RED", min_value=1, value=14, key="red_threshold")
 
-# Hitung jumlah anak per sisi yang diperlukan
 req_green_children = 2 ** green_level - 1
 
 # --- Helper Functions ---
@@ -64,6 +62,10 @@ def get_status(n, green, silver, red):
 # --- Status Calculation ---
 def calculate_statuses(all_members, max_index):
     green, silver, red = set(), set(), set()
+    eligible_green, eligible_silver, eligible_red = set(), set(), set()
+
+    cache_desc = {m: count_descendants(m, max_index) for m in all_members}
+
     for m in all_members:
         left, right = get_children(m)
         if left <= max_index and right <= max_index:
@@ -81,38 +83,44 @@ def calculate_statuses(all_members, max_index):
             right_count = len(collect(right, green_level-1))
             if left_count >= req_green_children and right_count >= req_green_children:
                 green.add(m)
+                eligible_green.add(m)
 
-    cache_desc = {m: count_descendants(m, max_index) for m in all_members}
     for m in all_members:
-        if len([d for d in green if d in cache_desc[m]]) >= silver_threshold:
+        count_green_below = len([d for d in green if d in cache_desc[m]])
+        if count_green_below >= silver_threshold:
             silver.add(m)
+            eligible_silver.add(m)
+
     for m in all_members:
-        if len([d for d in silver if d in cache_desc[m]]) >= red_threshold:
+        count_silver_below = len([d for d in silver if d in cache_desc[m]])
+        if count_silver_below >= red_threshold:
             red.add(m)
-    return green, silver, red
+            eligible_red.add(m)
+
+    return green, silver, red, eligible_green, eligible_silver, eligible_red
 
 # --- Build & Simulate ---
 tree = build_binary_tree(level_simulasi)
 all_members = [n for lvl in tree.values() for n in lvl]
 max_idx = max(all_members)
-green, silver, red = calculate_statuses(tuple(all_members), max_idx)
+green, silver, red, eligible_green, eligible_silver, eligible_red = calculate_statuses(tuple(all_members), max_idx)
 
 # --- Financial Calculations ---
 jm = len(all_members)
 TotalBelanja = jm * belanja
 CashIn = jm * alokasi_belanja
-TotGreen = len(green) * bonus_green
-TotSilver = len(silver) * bonus_silver
-TotRed = len(red) * bonus_red
+TotGreen = len(eligible_green) * bonus_green
+TotSilver = len(eligible_silver) * bonus_silver
+TotRed = len(eligible_red) * bonus_red
 CashOut = TotGreen + TotSilver + TotRed
 Nett = CashIn - CashOut
 
 # --- Output Ringkasan ---
 st.subheader("📊 Ringkasan Simulasi")
 st.markdown(f"**Total Member:** {jm:,}")
-st.markdown(f"**Green (lvl {green_level}):** {len(green):,}")
-st.markdown(f"**Silver (≥{silver_threshold} Green):** {len(silver):,}")
-st.markdown(f"**Red (≥{red_threshold} Silver):** {len(red):,}")
+st.markdown(f"**Green (lvl {green_level}):** {len(green):,} (Bonus: {len(eligible_green)})")
+st.markdown(f"**Silver (≥{silver_threshold} Green):** {len(silver):,} (Bonus: {len(eligible_silver)})")
+st.markdown(f"**Red (≥{red_threshold} Silver):** {len(red):,} (Bonus: {len(eligible_red)})")
 
 # --- Cashflow Table ---
 st.subheader("💰 Simulasi Cashflow & Bonus")
@@ -143,9 +151,9 @@ def draw(node, depth):
         n,d=q.pop(0)
         if d>depth or n>max_idx: continue
         lbl = f"#{n}"
-        if n in red: lbl=f"🔴{lbl}" 
-        elif n in silver: lbl=f"⚪{lbl}" 
-        elif n in green: lbl=f"🟢{lbl}"
+        if n in eligible_red: lbl=f"🔴{lbl}" 
+        elif n in eligible_silver: lbl=f"⚪{lbl}" 
+        elif n in eligible_green: lbl=f"🟢{lbl}"
         g.node(str(n),lbl)
         l,r=get_children(n)
         if l<=max_idx: g.edge(str(n),str(l)); q.append((l,d+1))
