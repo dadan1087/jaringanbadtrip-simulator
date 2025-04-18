@@ -130,6 +130,14 @@ TotRed = len(eligible_red) * bonus_red
 CashOut = TotGreen + TotSilver + TotRed
 Nett = CashIn - CashOut
 
+# --- Output Ringkasan Simulasi ---
+st.subheader("📊 Ringkasan Simulasi")
+jm = len(all_members)
+st.markdown(f"**Total Member:** {jm:,}")
+st.markdown(f"**Green (lvl {green_level}):** {len(green):,}")
+st.markdown(f"**Silver (≥{silver_threshold} Green):** {len(silver):,}")
+st.markdown(f"**Red (≥{red_threshold} Silver):** {len(red):,}")
+
 # --- Ringkasan Keuangan Lengkap ---
 st.subheader("💰 Ringkasan Keuangan Lengkap")
 
